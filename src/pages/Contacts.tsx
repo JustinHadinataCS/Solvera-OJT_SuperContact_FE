@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ interface Contact {
   dateCreated: string;
   ltv: string;
   avatar: string;
+  type: "contact" | "lead" | "task";
 }
 
 const contacts: Contact[] = [
@@ -39,6 +40,7 @@ const contacts: Contact[] = [
     dateCreated: "October 23, 2023",
     ltv: "$15,000",
     avatar: "JS",
+    type: "lead",
   },
   {
     id: 2,
@@ -51,6 +53,7 @@ const contacts: Contact[] = [
     dateCreated: "September 15, 2023",
     ltv: "$32,000",
     avatar: "BC",
+    type: "contact",
   },
   {
     id: 3,
@@ -63,6 +66,7 @@ const contacts: Contact[] = [
     dateCreated: "August 10, 2023",
     ltv: "$28,500",
     avatar: "FM",
+    type: "contact",
   },
   {
     id: 4,
@@ -75,6 +79,7 @@ const contacts: Contact[] = [
     dateCreated: "July 22, 2023",
     ltv: "$41,200",
     avatar: "KW",
+    type: "contact",
   },
   {
     id: 5,
@@ -87,6 +92,7 @@ const contacts: Contact[] = [
     dateCreated: "June 5, 2023",
     ltv: "$18,700",
     avatar: "MM",
+    type: "contact",
   },
 ];
 
@@ -121,6 +127,51 @@ export default function Contacts() {
   const [selectedContact, setSelectedContact] = useState<Contact>(contacts[0]);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showEmails, setShowEmails] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Simulating URL search params with state (in real app, use useSearchParams from react-router)
+  const [typeFilter, setTypeFilter] = useState<"contacts" | "leads" | "tasks">(
+    "contacts"
+  );
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive" | "new-lead"
+  >("all");
+
+  // Filter contacts based on all criteria
+  const filteredContacts = useMemo(() => {
+    let result = contacts;
+
+    // Type filter
+    if (typeFilter === "contacts") {
+      result = result.filter((c) => c.type === "contact");
+    } else if (typeFilter === "leads") {
+      result = result.filter((c) => c.type === "lead");
+    } else if (typeFilter === "tasks") {
+      result = result.filter((c) => c.type === "task");
+    }
+
+    // Status filter
+    if (statusFilter === "active") {
+      result = result.filter((c) => c.status === "Active");
+    } else if (statusFilter === "inactive") {
+      result = result.filter((c) => c.status === "Inactive");
+    } else if (statusFilter === "new-lead") {
+      result = result.filter((c) => c.status === "New Lead");
+    }
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (c) =>
+          c.name.toLowerCase().includes(query) ||
+          c.email.toLowerCase().includes(query) ||
+          c.company.toLowerCase().includes(query)
+      );
+    }
+
+    return result;
+  }, [typeFilter, statusFilter, searchQuery]);
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -167,6 +218,8 @@ export default function Contacts() {
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 h-9 text-sm bg-secondary border-border"
               />
             </div>
@@ -174,59 +227,122 @@ export default function Contacts() {
 
           {/* Tabs */}
           <div className="flex gap-3 px-3 py-2 border-b border-border">
-            <button className="text-xs font-medium text-foreground pb-1.5 border-b-2 border-primary">
+            <button
+              onClick={() => setTypeFilter("contacts")}
+              className={`text-xs font-medium pb-1.5 border-b-2 transition-colors ${
+                typeFilter === "contacts"
+                  ? "text-foreground border-primary"
+                  : "text-muted-foreground border-transparent"
+              }`}
+            >
               Contacts
             </button>
-            <button className="text-xs font-medium text-muted-foreground pb-1.5">
+            <button
+              onClick={() => setTypeFilter("leads")}
+              className={`text-xs font-medium pb-1.5 border-b-2 transition-colors ${
+                typeFilter === "leads"
+                  ? "text-foreground border-primary"
+                  : "text-muted-foreground border-transparent"
+              }`}
+            >
               Leads
             </button>
-            <button className="text-xs font-medium text-muted-foreground pb-1.5">
+            <button
+              onClick={() => setTypeFilter("tasks")}
+              className={`text-xs font-medium pb-1.5 border-b-2 transition-colors ${
+                typeFilter === "tasks"
+                  ? "text-foreground border-primary"
+                  : "text-muted-foreground border-transparent"
+              }`}
+            >
               Tasks
             </button>
           </div>
 
+          {/* Status Filter */}
+          <div className="flex flex-wrap gap-1.5 px-3 py-2 border-b border-border">
+            <Button
+              size="sm"
+              variant={statusFilter === "all" ? "default" : "outline"}
+              onClick={() => setStatusFilter("all")}
+              className="h-7 text-xs"
+            >
+              All
+            </Button>
+            <Button
+              size="sm"
+              variant={statusFilter === "active" ? "default" : "outline"}
+              onClick={() => setStatusFilter("active")}
+              className="h-7 text-xs"
+            >
+              Active
+            </Button>
+            <Button
+              size="sm"
+              variant={statusFilter === "inactive" ? "default" : "outline"}
+              onClick={() => setStatusFilter("inactive")}
+              className="h-7 text-xs"
+            >
+              Inactive
+            </Button>
+            <Button
+              size="sm"
+              variant={statusFilter === "new-lead" ? "default" : "outline"}
+              onClick={() => setStatusFilter("new-lead")}
+              className="h-7 text-xs"
+            >
+              New Lead
+            </Button>
+          </div>
+
           {/* Contact List */}
           <div className="flex-1 overflow-auto">
-            {contacts.map((contact) => (
-              <button
-                key={contact.id}
-                onClick={() => {
-                  setSelectedContact(contact);
-                  setShowSidebar(false);
-                }}
-                className={`w-full p-3 border-b border-border text-left transition-colors hover:bg-secondary/50 ${
-                  selectedContact.id === contact.id ? "bg-secondary" : ""
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-xs flex-shrink-0">
-                    {contact.avatar}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-foreground truncate">
-                      {contact.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {contact.company}
-                    </p>
-                  </div>
-                </div>
-                <Badge
-                  variant={
-                    contact.status === "New Lead" ? "default" : "secondary"
-                  }
-                  className={`text-xs ${
-                    contact.status === "New Lead"
-                      ? "bg-primary/20 text-primary hover:bg-primary/30"
-                      : contact.status === "Active"
-                      ? "bg-emerald-500/20 text-emerald-600"
-                      : "bg-muted text-muted-foreground"
+            {filteredContacts.length === 0 ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                No contacts found
+              </div>
+            ) : (
+              filteredContacts.map((contact) => (
+                <button
+                  key={contact.id}
+                  onClick={() => {
+                    setSelectedContact(contact);
+                    setShowSidebar(false);
+                  }}
+                  className={`w-full p-3 border-b border-border text-left transition-colors hover:bg-secondary/50 ${
+                    selectedContact.id === contact.id ? "bg-secondary" : ""
                   }`}
                 >
-                  {contact.status}
-                </Badge>
-              </button>
-            ))}
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-xs flex-shrink-0">
+                      {contact.avatar}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-foreground truncate">
+                        {contact.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {contact.company}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge
+                    variant={
+                      contact.status === "New Lead" ? "default" : "secondary"
+                    }
+                    className={`text-xs ${
+                      contact.status === "New Lead"
+                        ? "bg-primary/20 text-primary hover:bg-primary/30"
+                        : contact.status === "Active"
+                        ? "bg-emerald-500/20 text-emerald-600"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {contact.status}
+                  </Badge>
+                </button>
+              ))
+            )}
           </div>
         </div>
 
